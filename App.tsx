@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { NUMBER_SEQUENCE, SCAN_INTERVAL } from './constants';
-import { LogEntry, AppState } from './types';
-import TerminalLog from './components/TerminalLog';
-import { getHackerInsight } from './services/geminiService';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { NUMBER_SEQUENCE, SCAN_INTERVAL } from "./constants";
+import { LogEntry, AppState } from "./types";
+import TerminalLog from "./components/TerminalLog";
+import { getHackerInsight } from "./services/geminiService";
 
 const App: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -11,19 +10,22 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INITIALIZING);
   const [progress, setProgress] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
-  
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const addLog = useCallback((content: string, type: LogEntry['type'] = 'system') => {
-    const newLog: LogEntry = {
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date().toLocaleTimeString('en-GB', { hour12: false }),
-      content,
-      type
-    };
-    // Cap log history to ensure visibility on 16:9 screens
-    setLogs(prev => [...prev.slice(-14), newLog]);
-  }, []);
+  // CHANGED: Removed .slice(-14) so logs accumulate without being deleted
+  const addLog = useCallback(
+    (content: string, type: LogEntry["type"] = "system") => {
+      const newLog: LogEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        timestamp: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+        content,
+        type,
+      };
+      setLogs((prev) => [...prev, newLog]);
+    },
+    []
+  );
 
   const handleStart = () => {
     setIsStarted(true);
@@ -36,7 +38,8 @@ const App: React.FC = () => {
 
   // Main Hacking Sequence Logic
   useEffect(() => {
-    if (!isStarted || appState !== AppState.DECODING || currentIndex < 0) return;
+    if (!isStarted || appState !== AppState.DECODING || currentIndex < 0)
+      return;
 
     if (currentIndex >= NUMBER_SEQUENCE.length) {
       setAppState(AppState.FINISHED);
@@ -49,24 +52,26 @@ const App: React.FC = () => {
     setProgress(((currentIndex + 1) / NUMBER_SEQUENCE.length) * 100);
 
     // Check if we need to inject the "scary" lines after every 3 numbers
-    const shouldInjectScary = (currentIndex + 1) % 3 === 0 && currentIndex + 1 < NUMBER_SEQUENCE.length;
+    const shouldInjectScary =
+      (currentIndex + 1) % 3 === 0 && currentIndex + 1 < NUMBER_SEQUENCE.length;
 
     if (shouldInjectScary) {
       const scaryMessages = [
         "THEY ARE WATCHING YOUR KEYSTROKES.",
         "YOUR FILES ARE BREATHING.",
         "THE VOID IS CONSUMING THE BUFFER.",
-        "SYSTEM ENTROPY INCREASING."
+        "SYSTEM ENTROPY INCREASING.",
       ];
       // Inject lines immediately without adding extra timeouts
-      const msg = scaryMessages[Math.floor(Math.random() * scaryMessages.length)];
+      const msg =
+        scaryMessages[Math.floor(Math.random() * scaryMessages.length)];
       addLog(`!! ${msg}`, "warning");
       addLog(">> SOLVE THE BINARY BEFORE IT'S TOO LATE.", "hacker");
     }
 
     // Standard 2s pause between number groups
     timerRef.current = setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
     }, SCAN_INTERVAL);
 
     return () => {
@@ -75,9 +80,9 @@ const App: React.FC = () => {
   }, [currentIndex, appState, isStarted, addLog]);
 
   const finishHacking = async () => {
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     addLog("SEQUENCE COMPLETE. EXTRACTING PATTERNS...", "system");
-    
+
     try {
       const insight = await getHackerInsight(NUMBER_SEQUENCE);
       addLog("FINAL DECODED REALITY:", "warning");
@@ -92,7 +97,7 @@ const App: React.FC = () => {
     <div className="relative h-screen w-screen bg-black flex flex-col p-4 md:p-6 overflow-hidden select-none">
       {!isStarted && (
         <div className="absolute inset-0 z-[500] flex items-center justify-center bg-black/95 backdrop-blur-md">
-          <button 
+          <button
             onClick={handleStart}
             className="group relative px-10 py-5 border border-green-500 text-green-500 font-bold text-xl tracking-[0.4em] hover:bg-green-500 hover:text-black transition-all duration-500 overflow-hidden"
           >
@@ -122,11 +127,15 @@ const App: React.FC = () => {
       {/* Progress Bar Area */}
       <div className="mt-3 z-10">
         <div className="flex justify-between mb-1 text-[7px] text-green-900 font-bold tracking-widest uppercase">
-          <span>{appState === AppState.FINISHED ? "ENCRYPTION_COMPLETE" : "DATA_STREAM_SYNC"}</span>
+          <span>
+            {appState === AppState.FINISHED
+              ? "ENCRYPTION_COMPLETE"
+              : "DATA_STREAM_SYNC"}
+          </span>
           <span>{Math.floor(progress)}%</span>
         </div>
         <div className="h-[1px] w-full bg-green-950/20">
-          <div 
+          <div
             className="h-full bg-green-500 shadow-[0_0_8px_#22c55e] transition-all duration-[2000ms] ease-linear"
             style={{ width: `${progress}%` }}
           />
